@@ -64,6 +64,8 @@ function BindBaseEvent(){
     
     // 从表选中事件
     lu_form.on('checkbox(ck-less)', function(data){
+        TABLE_COLUMNS = [];
+
         if(data.elem.checked)
             LESS_TABLES.push(data.value);
         else
@@ -84,6 +86,13 @@ function BindBaseEvent(){
 
     // 添加条件
     $('#btnAddLayer').click(function(){
+        // 绑定列
+        $('#condition_list').empty();
+        $.each(TABLE_COLUMNS , function(index , item){
+            $('#condition_list').append('<option value="' + item.field + '">' + item.title + '</option>');
+        });
+        lu_form.render('select');
+
         OpenLayer(1 , $('#AddCondition') , '添加条件' , '60%' , '80%');
     });
 

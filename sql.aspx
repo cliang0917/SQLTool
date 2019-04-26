@@ -173,6 +173,16 @@
                         </div>
                     </li>
                     <li class="layui-timeline-item">
+                        <i class="layui-icon layui-timeline-axis">&#xe63f;</i>
+                        <div class="layui-timeline-content layui-text">
+                            <h3 class="layui-timeline-title">2019年4月24日</h3>
+                            <p>
+                                实现SQL预计中的 inner join<br />
+                                实现动态数据加载预览
+                            </p>
+                        </div>
+                    </li>
+                    <li class="layui-timeline-item">
                         <hr />
                     </li>
                     <li class="layui-timeline-item">
