@@ -31,6 +31,29 @@ function BindDataTable(){
 
 // 绑定事件
 function BindBaseEvent(){
+    // 使用帮助
+    $('#btnHelp').click(function(){
+        OpenLayer(1 , $('#useHelp') , '使用帮助' , '80%' , '80%');
+    });
+
+    // 更新日志
+    $('#btnLog').click(function(){
+        OpenLayer(1 , $('#updateLog') , '更新日志' , '80%' , '80%');
+    });
+
+    // 添加条件
+    $('#btnAddLayer').click(function(){
+        // 绑定列
+        $('#condition_list').empty();
+        $('#condition_list').append('<option value="">直接选择或搜索选择</option>');
+        $.each(TABLE_COLUMNS , function(index , item){
+            $('#condition_list').append('<option value="' + item.field + '" column_type="' + item.type + '">' + item.title + '</option>');
+        });
+        lu_form.render('select');
+
+        OpenLayer(1 , $('#AddCondition') , '添加条件' , '60%' , '80%');
+    });
+
     // 主表选择事件
     lu_form.on('radio(rd-primary)', function(data){
         //重置
@@ -74,28 +97,6 @@ function BindBaseEvent(){
         CreateSQL();
     });
 
-    // 使用帮助
-    $('#btnHelp').click(function(){
-        OpenLayer(1 , $('#useHelp') , '使用帮助' , '80%' , '80%');
-    });
-
-    // 更新日志
-    $('#btnLog').click(function(){
-        OpenLayer(1 , $('#updateLog') , '更新日志' , '80%' , '80%');
-    });
-
-    // 添加条件
-    $('#btnAddLayer').click(function(){
-        // 绑定列
-        $('#condition_list').empty();
-        $.each(TABLE_COLUMNS , function(index , item){
-            $('#condition_list').append('<option value="' + item.field + '">' + item.title + '</option>');
-        });
-        lu_form.render('select');
-
-        OpenLayer(1 , $('#AddCondition') , '添加条件' , '60%' , '80%');
-    });
-
     // tab切换
     lu_element.on('tab(show_demo)', function(data){
         if(data.index == 1){
@@ -114,6 +115,79 @@ function BindBaseEvent(){
             });
         }
     });
+
+    // 选择条件
+    lu_form.on('select(condition_list)', function(data){
+        $('#AddCondition').find('.layui-label-color-red').removeClass('layui-label-color-red');
+
+        var column_type = $('#condition_list').find("option:selected").attr('column_type');
+        if(column_type == 'string'){
+            $('#txtKeyWord_like').parent().parent().find('label').addClass('layui-label-color-red');
+            $('#txtKeyWord_in').parent().parent().find('label').addClass('layui-label-color-red');
+
+            $('#txtKeyWord_like').attr("disabled",false);
+            $('#txtKeyWord_in').attr("disabled",false);
+
+            $('#inStart').attr("disabled",true);
+            $('#inEnd').attr("disabled",true);
+            $('#price_min').attr("disabled",true);
+            $('#price_max').attr("disabled",true);
+            $('input[name="bool_choose"]').attr("disabled",true);
+        }
+        else if(column_type == 'int'){
+            $('#txtKeyWord_in').parent().parent().find('label').addClass('layui-label-color-red');
+            
+            $('#txtKeyWord_in').attr("disabled",false);
+            
+            $('#txtKeyWord_like').attr("disabled",true);
+            $('#inStart').attr("disabled",true);
+            $('#inEnd').attr("disabled",true);
+            $('#price_min').attr("disabled",true);
+            $('#price_max').attr("disabled",true);
+            $('input[name="bool_choose"]').attr("disabled",true);
+        }
+        else if(column_type == 'bool'){
+            $('input[name="bool_choose"]').parent().parent().find('label').addClass('layui-label-color-red');
+            
+            $('input[name="bool_choose"]').attr("disabled",false);
+
+            $('#txtKeyWord_in').attr("disabled",true);            
+            $('#txtKeyWord_like').attr("disabled",true);            
+            $('#price_min').attr("disabled",true);
+            $('#price_max').attr("disabled",true);
+            $('#inStart').attr("disabled",true);
+            $('#inEnd').attr("disabled",true);
+        }
+        else if(column_type == 'date' || column_type == 'datetime'){
+            $('#inStart').parent().parent().find('label').addClass('layui-label-color-red');
+            
+            $('#inStart').attr("disabled",false);
+            $('#inEnd').attr("disabled",false);
+
+            $('#txtKeyWord_in').attr("disabled",true);            
+            $('#txtKeyWord_like').attr("disabled",true);            
+            $('#price_min').attr("disabled",true);
+            $('#price_max').attr("disabled",true);
+            $('input[name="bool_choose"]').attr("disabled",true);
+        }
+        else if(column_type == 'double'){
+            $('#price_min').parent().parent().find('label').addClass('layui-label-color-red');
+
+            $('#price_min').attr("disabled",false);
+            $('#price_max').attr("disabled",false);
+
+            $('#txtKeyWord_like').attr("disabled",true);
+            $('#txtKeyWord_in').attr("disabled",true);
+            $('#inStart').attr("disabled",true);
+            $('#inEnd').attr("disabled",true);
+            $('input[name="bool_choose"]').attr("disabled",true);
+        }
+        else{
+            lu_layer.msg('数据列类型错误！');
+        }
+
+        lu_form.render();
+    }); 
 }
 
 // 生成SQL
@@ -166,20 +240,23 @@ function CreateSQL(){
 function CreateTableColumn(item){
     if(item.column_type == 'date')
         TABLE_COLUMNS.push({ 
-            field: '' + item.column + '' , 
-            title: '' + item.column_name + '', 
+            field: item.column , 
+            title: item.column_name , 
+            type: item.column_type ,
             templet: '<span>{{ moment(new Date(d.' + item.column + ')).format("YYYY-MM-DD")}}</span>'
         });
     else if(item.column_type == 'datetime')
         TABLE_COLUMNS.push({ 
-            field: '' + item.column + '' , 
-            title: '' + item.column_name + '', 
+            field: item.column , 
+            title: item.column_name , 
+            type: item.column_type ,
             templet: '<span>{{ moment(new Date(d.' + item.column + ')).format("YYYY-MM-DD hh:mm:ss")}}</span>'
         });
     else 
         TABLE_COLUMNS.push({ 
-            field: '' + item.column + '' , 
-            title: '' + item.column_name + ''
+            field: item.column , 
+            title: item.column_name ,
+            type: item.column_type
         });
 }
 

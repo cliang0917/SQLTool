@@ -43,6 +43,7 @@
                                 <i class="layui-icon">&#xe654;</i>
                             </button>
                         </div>
+                        <span class="layui-dc-circle">123321123321</span>
                     </div>
                     <div class="layui-form-item layui-form-text">
                         <label class="layui-form-label"><b>SQL</b></label>
@@ -71,7 +72,7 @@
                 <div class="layui-form-item">
                     <label class="layui-form-label"><b>选择条件列</b></label>
                     <div class="layui-input-block">
-                        <select id="condition_list" lay-filter="condition_list" lay-verify="" lay-search></select>
+                        <select id="condition_list" lay-filter="condition_list" lay-verify="" lay-search=""></select>
                     </div>
                 </div>
                 <div class="layui-form-item">
@@ -114,8 +115,8 @@
                     <div class="layui-inline">
                         <label class="layui-form-label"><b>布尔选择</b></label>
                         <div class="layui-input-block">
-                            <input type="radio" name="bool_choose" value="1" title="是" />
-                            <input type="radio" name="bool_choose" value="0" title="否" />
+                            <input type="radio" name="bool_choose" value="1" title="是" disabled/>
+                            <input type="radio" name="bool_choose" value="0" title="否" disabled/>
                         </div>
                     </div>
                 </div>
