@@ -115,8 +115,8 @@
                     <div class="layui-inline">
                         <label class="layui-form-label"><b>布尔选择</b></label>
                         <div class="layui-input-block">
-                            <input type="radio" name="bool_choose" value="1" title="是" disabled/>
-                            <input type="radio" name="bool_choose" value="0" title="否" disabled/>
+                            <input type="radio" name="bool_choose" value="是" title="是" disabled/>
+                            <input type="radio" name="bool_choose" value="否" title="否" disabled/>
                         </div>
                     </div>
                 </div>

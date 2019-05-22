@@ -2,7 +2,7 @@
 var lu_element , lu_form , lu_table , lu_layer , lu_laydate; // LayUI 相关组件
 var PRIMARY_TABLE; // 主表
 var LESS_TABLES = []; // 从表
-var CONDITIONs = []; // 条件
+var CONDITIONS = []; // 条件
 var TABLE_COLUMNS = []; // 预览表格的表头数组
 
 $.getJSON('./SCIDataReport/SCIDataStructure.json', function (_source) {
@@ -43,6 +43,8 @@ function BindBaseEvent(){
 
     // 添加条件
     $('#btnAddLayer').click(function(){
+        // 重置
+        ResetConditionLayer();
         // 绑定列
         $('#condition_list').empty();
         $('#condition_list').append('<option value="">直接选择或搜索选择</option>');
@@ -58,7 +60,7 @@ function BindBaseEvent(){
     lu_form.on('radio(rd-primary)', function(data){
         //重置
         LESS_TABLES = [];
-        CONDITIONs = [];
+        CONDITIONS = [];
         TABLE_COLUMNS = [];
 
         // 先全部禁用和取消选中
@@ -71,7 +73,7 @@ function BindBaseEvent(){
         // 找到可以关联的表，并启用
         var _select_table = data.value;
         var _table_join = Enumerable.From(_t.datatables)
-            .Where('$.table == "' + _select_table + '"')    
+            .Where('$.table == "' + _select_table + '"')
             .Select('$.table_join')
             .ToArray();
         
@@ -151,8 +153,8 @@ function BindBaseEvent(){
             
             $('input[name="bool_choose"]').attr("disabled",false);
 
-            $('#txtKeyWord_in').attr("disabled",true);            
-            $('#txtKeyWord_like').attr("disabled",true);            
+            $('#txtKeyWord_in').attr("disabled",true);
+            $('#txtKeyWord_like').attr("disabled",true);
             $('#price_min').attr("disabled",true);
             $('#price_max').attr("disabled",true);
             $('#inStart').attr("disabled",true);
@@ -164,8 +166,8 @@ function BindBaseEvent(){
             $('#inStart').attr("disabled",false);
             $('#inEnd').attr("disabled",false);
 
-            $('#txtKeyWord_in').attr("disabled",true);            
-            $('#txtKeyWord_like').attr("disabled",true);            
+            $('#txtKeyWord_in').attr("disabled",true);
+            $('#txtKeyWord_like').attr("disabled",true);
             $('#price_min').attr("disabled",true);
             $('#price_max').attr("disabled",true);
             $('input[name="bool_choose"]').attr("disabled",true);
@@ -183,11 +185,81 @@ function BindBaseEvent(){
             $('input[name="bool_choose"]').attr("disabled",true);
         }
         else{
-            lu_layer.msg('数据列类型错误！');
+            lu_layer.msg('数据列类型错误');
         }
 
         lu_form.render();
     }); 
+
+    lu_laydate.render({elem: '#inStart'});
+    lu_laydate.render({elem: '#inEnd'});
+
+    // 添加条件
+    $('#btnAddContion').click(function(){
+        var _obj = {};
+
+        var column_type = $('#condition_list').find("option:selected").attr('column_type');
+        var _field = $('#condition_list').val();
+
+        if(_field == ''){
+            lu_layer.msg('请选择条件列');
+            return;
+        }
+
+        _obj.field = _field;
+        _obj.column_type = column_type;
+
+        if(column_type == 'string'){
+            if($('#txtKeyWord_like').val() != '' && $('#txtKeyWord_in').val() != ''){
+                lu_layer.msg('模糊关键字和精确关键字只能填一项');
+                return;
+            }
+
+            if($('#txtKeyWord_like').val() != ''){
+                _obj.stringtype = "like";
+                _obj.keyword = $('#txtKeyWord_like').val();
+            }
+            else if($('#txtKeyWord_in').val() != ''){
+                _obj.stringtype = "in";
+                _obj.keyword = $('#txtKeyWord_in').val();
+            }
+        }
+        else if(column_type == 'int'){
+            _obj.keyword = $('#txtKeyWord_in').val();
+        }
+        else if(column_type == 'bool'){
+            _obj.keyword = $('input[name="bool_choose"]:checked').val();
+        }
+        else if(column_type == 'date' || column_type == 'datetime'){
+            _obj.left = $('#inStart').val();
+            _obj.right = $('#inEnd').val();
+        }
+        else if(column_type == 'double'){
+            _obj.left = $('#price_min').val();
+            _obj.right = $('#price_max').val();
+        }
+        else{
+            lu_layer.msg('数据列类型错误');
+        }
+
+        isExists = false;
+        // 已存在，则替换
+        for(i=0; i < CONDITIONS.length; i++){
+            if(CONDITIONS[i].field == _field)
+            {
+                CONDITIONS[i] = _obj;
+                isExists = true;
+                break;
+            }
+        }
+        // 不存在，则添加
+        if(!isExists){
+            CONDITIONS.push(_obj);
+        }
+
+        CreateSQL();
+        lu_layer.closeAll();
+    });
 }
 
 // 生成SQL
@@ -199,7 +271,7 @@ function CreateSQL(){
     var _WHERE = '';
 
     var _table = Enumerable.From(_t.datatables)
-        .Where('$.table == "' + PRIMARY_TABLE + '"')    
+        .Where('$.table == "' + PRIMARY_TABLE + '"')
         .Select('$')
         .ToArray()[0];
 
@@ -230,6 +302,56 @@ function CreateSQL(){
         var f = $.inArray(item.table , LESS_TABLES);
         if(f > -1)
             _INNER += 'inner join ' + item.table + ' on ' + item.table + '.' + item.primary_key + ' = ' + PRIMARY_TABLE + '.' + item.foreign_key + '\r\n';
+    });
+
+    $.each(CONDITIONS , function(index , item){
+        var _temp_where = '';
+        if(item.column_type == 'string'){
+            var _keys = SpecialKeyWord(item.keyword);
+
+            if(item.stringtype == 'in'){
+                var _keys_char = Enumerable.From(_keys)
+                    .Select(function (x) { return "'" + x + "'" })
+                    .ToArray();
+
+                _temp_where = item.field + ' in (' + _keys_char.join(',') + ')';
+            }
+            else if(item.stringtype == 'like'){
+                var _keys_char = Enumerable.From(_keys)
+                    .Select(function (x) { return item.field + " like '%" + x + "%'" })
+                    .ToArray();
+
+                _temp_where = '(' + _keys_char.join(' or ') + ')';
+            }
+        }
+        else if(item.column_type == 'int'){
+            var _keys = SpecialKeyWord(item.keyword);
+            _temp_where = item.field + ' in (' + _keys.join(',') + ')';
+        }
+        else if(item.column_type == 'bool'){
+            _temp_where = item.field + " = '" + item.keyword + "'";
+        }
+        else if(item.column_type == 'date' || item.column_type == 'datetime'){
+            if(item.left != '' && item.right != '')
+                _temp_where = item.field + " between '" + item.left + "' and '" + item.right + "'";
+            else if(item.left != '')
+                _temp_where = item.field + " >= '" + item.left + "'";
+            else if(item.right != '')
+                _temp_where = item.field + " <= '" + item.right + "'";
+        }
+        else if(item.column_type == 'double'){
+            if(item.left != '' && item.right != '')
+                _temp_where = item.field + ' between ' + item.left + ' and ' + item.right;
+            else if(item.left != '')
+                _temp_where = item.field + ' >= ' + item.left;
+            else if(item.right != '')
+                _temp_where = item.field + ' <= ' + item.right;
+        }
+
+        if(index == 0)
+            _WHERE += "where " + _temp_where + '\r\n';
+        else
+            _WHERE += "and " + _temp_where + '\r\n';
     });
 
     var _SQL = _SELECT + '\r\n' + _FIELD  + '\r\n'+ _FROM + '\r\n' + _INNER + _WHERE + '\r\n';
@@ -268,4 +390,40 @@ function OpenLayer(_type , _content , _title , _width , _height){
         title: _title,
         area: [_width, _height]
     });
+}
+
+// 重置条件弹出窗
+function ResetConditionLayer(){
+    $('#AddCondition').find('.layui-label-color-red').removeClass('layui-label-color-red');
+
+    $('#txtKeyWord_like').attr("disabled",true);
+    $('#txtKeyWord_in').attr("disabled",true);
+    $('#inStart').attr("disabled",true);
+    $('#inEnd').attr("disabled",true);
+    $('#price_min').attr("disabled",true);
+    $('#price_max').attr("disabled",true);
+    $('input[name="bool_choose"]').attr("disabled",true);
+
+    $('#txtKeyWord_like').val('');
+    $('#txtKeyWord_in').val('');
+    $('#inStart').val('');
+    $('#inEnd').val('');
+    $('#price_min').val('');
+    $('#price_max').val('');
+
+    lu_form.render();
+}
+
+// 处理关键字特殊字符，去除空字符
+function SpecialKeyWord(keyword){
+    var _keyword = keyword.replace(/\r\n/g,"").replace(/\n/g,"").replace(/，/g,","); 
+    var _keys = _keyword.split(',');
+    var _keys_result = [];
+    for(i = 0; i < _keys.length; i++){
+        if(_keys[i] != ''){
+            _keys_result.push(_keys[i]);
+        }
+    }
+
+    return _keys_result;
 }
