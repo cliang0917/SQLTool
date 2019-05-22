@@ -245,8 +245,7 @@ function BindBaseEvent(){
         isExists = false;
         // 已存在，则替换
         for(i=0; i < CONDITIONS.length; i++){
-            if(CONDITIONS[i].field == _field)
-            {
+            if(CONDITIONS[i].field == _field){
                 CONDITIONS[i] = _obj;
                 isExists = true;
                 break;
