@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeFile="sql.aspx.cs" Inherits="sql" %>
+<%@ Page Language="C#" AutoEventWireup="true" CodeFile="sql.aspx.cs" Inherits="sql" %>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head runat="server">
@@ -43,7 +43,6 @@
                                 <i class="layui-icon">&#xe654;</i>
                             </button>
                         </div>
-                        <span class="layui-dc-circle">123321123321</span>
                     </div>
                     <div class="layui-form-item layui-form-text">
                         <label class="layui-form-label"><b>SQL</b></label>
@@ -165,59 +164,9 @@
                     <li class="layui-timeline-item">
                         <i class="layui-icon layui-timeline-axis">&#xe63f;</i>
                         <div class="layui-timeline-content layui-text">
-                            <h3 class="layui-timeline-title">2019年4月21日</h3>
+                            <h3 class="layui-timeline-title">20xx年xx月xx日</h3>
                             <p>
-                                实现主从与从表的绑定<br />
-                                实现从表跟随主表的联动<br />
-                                实现SQL语句中的 select * from
-                            </p>
-                        </div>
-                    </li>
-                    <li class="layui-timeline-item">
-                        <i class="layui-icon layui-timeline-axis">&#xe63f;</i>
-                        <div class="layui-timeline-content layui-text">
-                            <h3 class="layui-timeline-title">2019年4月24日</h3>
-                            <p>
-                                实现SQL预计中的 inner join<br />
-                                实现动态数据加载预览
-                            </p>
-                        </div>
-                    </li>
-                    <li class="layui-timeline-item">
-                        <hr />
-                    </li>
-                    <li class="layui-timeline-item">
-                        <i class="layui-icon layui-timeline-axis">&#xe63f;</i>
-                        <div class="layui-timeline-content layui-text">
-                            <h3 class="layui-timeline-title">2018年12月28日</h3>
-                            <p>
-                                优化预览数据加载<br />
-                                优化筛选条件，从表取消选中时，同时删除相应从表的已添加条件<br />
-                                新增Boolean类型的筛选条件<br />
-                                修复字符串类型关键字过多时条件无法删除的BUG，目前最多保留100个字符<br />
-                                新增默认条件，如查询订单信息时，默认查询已到账且到账时间在2018年的数据
-                            </p>
-                        </div>
-                    </li>
-                    <li class="layui-timeline-item">
-                        <i class="layui-icon layui-timeline-axis">&#xe63f;</i>
-                        <div class="layui-timeline-content layui-text">
-                            <h3 class="layui-timeline-title">2018年12月27日</h3>
-                            <p>
-                                实现SQL预计中的 IN 查询<br />
-                                实现SQL语句中的范围（Range）查询<br />
-                                实现数据预览
-                            </p>
-                        </div>
-                    </li>
-                    <li class="layui-timeline-item">
-                        <i class="layui-icon layui-timeline-axis">&#xe63f;</i>
-                        <div class="layui-timeline-content layui-text">
-                            <h3 class="layui-timeline-title">2018年12月26日</h3>
-                            <p>
-                                实现SQL预计中的 inner join<br />
-                                实现批量粘贴的关键字的自动检；<br />
-                                实现SQL语句中的 模糊查询 ，使用 contains 关键字
+                                NULL
                             </p>
                         </div>
                     </li>
