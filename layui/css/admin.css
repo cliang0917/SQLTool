@@ -1,4 +1,4 @@
-﻿.layadmin-iframe {
+.layadmin-iframe {
     position: absolute;
     width: 100%;
     height: 100%;
@@ -24,6 +24,7 @@
     background-color: #1E9FFF;
     color: #fff;
     padding: 0 18px;
+    margin: 0 5px;
 }
 
 .condition-tip {
