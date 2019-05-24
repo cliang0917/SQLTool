@@ -1,4 +1,4 @@
-﻿var _t; // 数据源
+var _t; // 数据源
 var lu_element , lu_form , lu_table , lu_layer , lu_laydate; // LayUI 相关组件
 var PRIMARY_TABLE; // 主表
 var LESS_TABLES = []; // 从表
@@ -48,6 +48,7 @@ function BindBaseEvent(){
         // 绑定列
         $('#condition_list').empty();
         $('#condition_list').append('<option value="">直接选择或搜索选择</option>');
+        
         $.each(TABLE_COLUMNS , function(index , item){
             $('#condition_list').append('<option value="' + item.field + '" column_type="' + item.type + '">' + item.title + '</option>');
         });
@@ -85,6 +86,8 @@ function BindBaseEvent(){
         // 生成SQL
         PRIMARY_TABLE = data.value;
         CreateSQL();
+
+        CollectColumns();
     });
     
     // 从表选中事件
@@ -97,6 +100,7 @@ function BindBaseEvent(){
             LESS_TABLES.splice($.inArray(data.value , LESS_TABLES) , 1);
 
         CreateSQL();
+        CollectColumns();
     });
 
     // tab切换
@@ -256,6 +260,9 @@ function BindBaseEvent(){
             CONDITIONS.push(_obj);
         }
 
+        var _temp_translate = TranslateConditions(_obj , 'translate');
+        $('#con_list').append('<span class="layui-dc-circle">' + _temp_translate + '</span>');
+
         CreateSQL();
         lu_layer.closeAll();
     });
@@ -278,7 +285,6 @@ function CreateSQL(){
     // 找主表的列
     $.each(_table.table_columns , function(index , item){
         _FIELD_ARR.push('    ' + PRIMARY_TABLE + '.' + item.column);
-        CreateTableColumn(item);
     });
     // 找从表的列
     $.each(LESS_TABLES , function(index , item){
@@ -289,7 +295,6 @@ function CreateSQL(){
 
         $.each(_less_table.table_columns , function(cIndex , cItem){
             _FIELD_ARR.push('    ' + item + '.' + cItem.column);
-            CreateTableColumn(cItem);
         });
     });
 
@@ -304,49 +309,7 @@ function CreateSQL(){
     });
 
     $.each(CONDITIONS , function(index , item){
-        var _temp_where = '';
-        if(item.column_type == 'string'){
-            var _keys = SpecialKeyWord(item.keyword);
-
-            if(item.stringtype == 'in'){
-                var _keys_char = Enumerable.From(_keys)
-                    .Select(function (x) { return "'" + x + "'" })
-                    .ToArray();
-
-                _temp_where = item.field + ' in (' + _keys_char.join(',') + ')';
-            }
-            else if(item.stringtype == 'like'){
-                var _keys_char = Enumerable.From(_keys)
-                    .Select(function (x) { return item.field + " like '%" + x + "%'" })
-                    .ToArray();
-
-                _temp_where = '(' + _keys_char.join(' or ') + ')';
-            }
-        }
-        else if(item.column_type == 'int'){
-            var _keys = SpecialKeyWord(item.keyword);
-            _temp_where = item.field + ' in (' + _keys.join(',') + ')';
-        }
-        else if(item.column_type == 'bool'){
-            _temp_where = item.field + " = '" + item.keyword + "'";
-        }
-        else if(item.column_type == 'date' || item.column_type == 'datetime'){
-            if(item.left != '' && item.right != '')
-                _temp_where = item.field + " between '" + item.left + "' and '" + item.right + "'";
-            else if(item.left != '')
-                _temp_where = item.field + " >= '" + item.left + "'";
-            else if(item.right != '')
-                _temp_where = item.field + " <= '" + item.right + "'";
-        }
-        else if(item.column_type == 'double'){
-            if(item.left != '' && item.right != '')
-                _temp_where = item.field + ' between ' + item.left + ' and ' + item.right;
-            else if(item.left != '')
-                _temp_where = item.field + ' >= ' + item.left;
-            else if(item.right != '')
-                _temp_where = item.field + ' <= ' + item.right;
-        }
-
+        var _temp_where = TranslateConditions(item , 'where');
         if(index == 0)
             _WHERE += "where " + _temp_where + '\r\n';
         else
@@ -355,6 +318,30 @@ function CreateSQL(){
 
     var _SQL = _SELECT + '\r\n' + _FIELD  + '\r\n'+ _FROM + '\r\n' + _INNER + _WHERE + '\r\n';
     $('#txtSql').val(_SQL);
+}
+
+// 收集列的信息
+function CollectColumns(){
+    // 组装主表
+    var _table = Enumerable.From(_t.datatables)
+        .Where('$.table == "' + PRIMARY_TABLE + '"')
+        .Select('$')
+        .ToArray()[0];
+    $.each(_table.table_columns , function(index , item){
+        CreateTableColumn(item);
+    });
+
+    // 组装从表
+    $.each(LESS_TABLES , function(index , item){
+        var _less_table = Enumerable.From(_t.datatables)
+            .Where('$.table == "' + item + '"')    
+            .Select('$')
+            .ToArray()[0];
+
+        $.each(_less_table.table_columns , function(cIndex , cItem){
+            CreateTableColumn(cItem);
+        });
+    });
 }
 
 // 创建预览表格的列
@@ -425,4 +412,73 @@ function SpecialKeyWord(keyword){
     }
 
     return _keys_result;
+}
+
+// 解析及语义化查询条件
+function TranslateConditions(item , type){
+    var _temp_where = '';
+    var _temp_translate = '';
+
+    if(item.column_type == 'string'){
+        var _keys = SpecialKeyWord(item.keyword);
+
+        if(item.stringtype == 'in'){
+            var _keys_char = Enumerable.From(_keys)
+                .Select(function (x) { return "'" + x + "'" })
+                .ToArray();
+
+            _temp_where = item.field + ' in (' + _keys_char.join(',') + ')';
+            _temp_translate = item.field + '是' + _keys_char.join(',');
+        }
+        else if(item.stringtype == 'like'){
+            var _keys_char = Enumerable.From(_keys)
+                .Select(function (x) { return item.field + " like '%" + x + "%'" })
+                .ToArray();
+
+            _temp_where = '(' + _keys_char.join(' or ') + ')';
+            _temp_translate = item.field + "包含" + _keys.join(',');
+        }
+    }
+    else if(item.column_type == 'int'){
+        var _keys = SpecialKeyWord(item.keyword);
+        _temp_where = item.field + ' in (' + _keys.join(',') + ')';
+        _temp_translate = item.field + '是' + _keys.join(',');
+    }
+    else if(item.column_type == 'bool'){
+        _temp_where = item.field + " = '" + item.keyword + "'";
+        _temp_translate = item.field + '是' + item.keyword;
+    }
+    else if(item.column_type == 'date' || item.column_type == 'datetime'){
+        if(item.left != '' && item.right != ''){
+            _temp_where = item.field + " between '" + item.left + "' and '" + item.right + "'";
+            _temp_translate = item.field + '在' + item.left + '和' + item.right + '之间';
+        }
+        else if(item.left != ''){
+            _temp_where = item.field + " >= '" + item.left + "'";
+            _temp_translate = item.field + '大于等于' + item.left;
+        }
+        else if(item.right != ''){
+            _temp_where = item.field + " <= '" + item.right + "'";
+            _temp_translate = item.field + '小于等于' + item.left;
+        }
+    }
+    else if(item.column_type == 'double'){
+        if(item.left != '' && item.right != ''){
+            _temp_where = item.field + ' between ' + item.left + ' and ' + item.right;
+            _temp_translate = item.field + '在' + item.left + '和' + item.right + '之间';
+        }
+        else if(item.left != ''){
+            _temp_where = item.field + ' >= ' + item.left;
+            _temp_translate = item.field + '大于等于' + item.left;
+        }
+        else if(item.right != ''){
+            _temp_where = item.field + ' <= ' + item.right;
+            _temp_translate = item.field + '小于等于' + item.left;
+        }
+    }
+
+    if(type == 'where')
+        return _temp_where;
+    else
+        return _temp_translate;
 }
