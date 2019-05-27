@@ -27,9 +27,17 @@
     margin: 0 5px;
 }
 
-.condition-tip {
-    color: orange;
+.layui-dc-circle i{
+    margin-left: 15px;
+    cursor: pointer;
+    color: red;
     font-weight: bold;
+}
+
+.condition-tip {
+    color: orangered;
+    font-weight: bold;
+    padding: 0 5px;
 }
 
 .layui-label-color-red {
