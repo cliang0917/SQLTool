@@ -50,7 +50,15 @@ function BindBaseEvent(){
         $('#condition_list').append('<option value="">直接选择或搜索选择</option>');
         
         $.each(TABLE_COLUMNS , function(index , item){
-            $('#condition_list').append('<option value="' + item.field + '" column_type="' + item.type + '">' + item.title + '</option>');
+            var _value = item.table + '.' + item.field;
+            var _disabled = '';
+            $.each(CONDITIONS , function(conIndex , conItem){
+                if(conItem.field == _value){
+                    _disabled = 'disabled';
+                }
+            });
+
+            $('#condition_list').append('<option value="' + _value + '" column_type="' + item.type + '" ' + _disabled + '>' + item.title + '</option>');
         });
         lu_form.render('select');
 
@@ -204,13 +212,16 @@ function BindBaseEvent(){
 
         var column_type = $('#condition_list').find("option:selected").attr('column_type');
         var _field = $('#condition_list').val();
+        var _field_tran = $('#condition_list').find("option:selected").text();
 
         if(_field == ''){
             lu_layer.msg('请选择条件列');
             return;
         }
 
+        _obj.guid = Guid();
         _obj.field = _field;
+        _obj.field_tran = _field_tran;
         _obj.column_type = column_type;
 
         if(column_type == 'string'){
@@ -261,10 +272,33 @@ function BindBaseEvent(){
         }
 
         var _temp_translate = TranslateConditions(_obj , 'translate');
-        $('#con_list').append('<span class="layui-dc-circle">' + _temp_translate + '</span>');
+        $('#con_list').append('<span class="layui-dc-circle" guid="' + _obj.guid + '">' + _temp_translate + '<i onclick="DeleteContion(\'' + _obj.guid + '\');" title="删除" class="layui-icon">&#x1006;</i></span>');
 
         CreateSQL();
         lu_layer.closeAll();
+    });
+}
+
+// 删除条件
+function DeleteContion(_guid){
+    lu_layer.confirm('确定要删除此条件么？', {
+        btn: ['确定','取消']
+    }, function(){
+        // 删除条件
+        for(i=0; i < CONDITIONS.length; i++){
+            if(CONDITIONS[i].guid == _guid){
+                CONDITIONS.splice(i, 1);
+            }
+        }
+
+        // 删除提示
+        $('.layui-dc-circle[guid="' + _guid + '"]').remove();
+
+        // 重新生成SQL预计
+        CreateSQL();
+        lu_layer.msg('删除成功', {icon: 1});
+    }, function(){
+        console.log('取消');
     });
 }
 
@@ -328,7 +362,7 @@ function CollectColumns(){
         .Select('$')
         .ToArray()[0];
     $.each(_table.table_columns , function(index , item){
-        CreateTableColumn(item);
+        CreateTableColumn(item , PRIMARY_TABLE);
     });
 
     // 组装从表
@@ -339,15 +373,16 @@ function CollectColumns(){
             .ToArray()[0];
 
         $.each(_less_table.table_columns , function(cIndex , cItem){
-            CreateTableColumn(cItem);
+            CreateTableColumn(cItem , item);
         });
     });
 }
 
 // 创建预览表格的列
-function CreateTableColumn(item){
+function CreateTableColumn(item , tablename){
     if(item.column_type == 'date')
         TABLE_COLUMNS.push({ 
+            table: tablename ,
             field: item.column , 
             title: item.column_name , 
             type: item.column_type ,
@@ -355,6 +390,7 @@ function CreateTableColumn(item){
         });
     else if(item.column_type == 'datetime')
         TABLE_COLUMNS.push({ 
+            table: tablename ,
             field: item.column , 
             title: item.column_name , 
             type: item.column_type ,
@@ -362,6 +398,7 @@ function CreateTableColumn(item){
         });
     else 
         TABLE_COLUMNS.push({ 
+            table: tablename ,
             field: item.column , 
             title: item.column_name ,
             type: item.column_type
@@ -428,7 +465,7 @@ function TranslateConditions(item , type){
                 .ToArray();
 
             _temp_where = item.field + ' in (' + _keys_char.join(',') + ')';
-            _temp_translate = item.field + '是' + _keys_char.join(',');
+            _temp_translate = item.field_tran + TranTipAddClass('是') + _keys_char.join(',');
         }
         else if(item.stringtype == 'like'){
             var _keys_char = Enumerable.From(_keys)
@@ -436,44 +473,44 @@ function TranslateConditions(item , type){
                 .ToArray();
 
             _temp_where = '(' + _keys_char.join(' or ') + ')';
-            _temp_translate = item.field + "包含" + _keys.join(',');
+            _temp_translate = item.field_tran + TranTipAddClass('包含') + _keys.join(',');
         }
     }
     else if(item.column_type == 'int'){
         var _keys = SpecialKeyWord(item.keyword);
         _temp_where = item.field + ' in (' + _keys.join(',') + ')';
-        _temp_translate = item.field + '是' + _keys.join(',');
+        _temp_translate = item.field_tran + TranTipAddClass('是') + _keys.join(',');
     }
     else if(item.column_type == 'bool'){
         _temp_where = item.field + " = '" + item.keyword + "'";
-        _temp_translate = item.field + '是' + item.keyword;
+        _temp_translate = item.field_tran + TranTipAddClass('是') + item.keyword;
     }
     else if(item.column_type == 'date' || item.column_type == 'datetime'){
         if(item.left != '' && item.right != ''){
             _temp_where = item.field + " between '" + item.left + "' and '" + item.right + "'";
-            _temp_translate = item.field + '在' + item.left + '和' + item.right + '之间';
+            _temp_translate = item.field_tran + TranTipAddClass('在') + item.left + TranTipAddClass('和') + item.right + TranTipAddClass('之间');
         }
         else if(item.left != ''){
             _temp_where = item.field + " >= '" + item.left + "'";
-            _temp_translate = item.field + '大于等于' + item.left;
+            _temp_translate = item.field_tran + TranTipAddClass('大于等于') + item.left;
         }
         else if(item.right != ''){
             _temp_where = item.field + " <= '" + item.right + "'";
-            _temp_translate = item.field + '小于等于' + item.left;
+            _temp_translate = item.field_tran + TranTipAddClass('小于等于') + item.left;
         }
     }
     else if(item.column_type == 'double'){
         if(item.left != '' && item.right != ''){
             _temp_where = item.field + ' between ' + item.left + ' and ' + item.right;
-            _temp_translate = item.field + '在' + item.left + '和' + item.right + '之间';
+            _temp_translate = item.field_tran + TranTipAddClass('在') + item.left + TranTipAddClass('和') + item.right + TranTipAddClass('之间');
         }
         else if(item.left != ''){
             _temp_where = item.field + ' >= ' + item.left;
-            _temp_translate = item.field + '大于等于' + item.left;
+            _temp_translate = item.field_tran + TranTipAddClass('大于等于') + item.left;
         }
         else if(item.right != ''){
             _temp_where = item.field + ' <= ' + item.right;
-            _temp_translate = item.field + '小于等于' + item.left;
+            _temp_translate = item.field_tran + TranTipAddClass('小于等于') + item.left;
         }
     }
 
@@ -481,4 +518,17 @@ function TranslateConditions(item , type){
         return _temp_where;
     else
         return _temp_translate;
+}
+
+// 给条件转义的关键字加样式表，突出显示
+function TranTipAddClass(key){
+    return '<span class="condition-tip">' + key + '</span>';
+}
+
+// 生成Guid
+function Guid() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+        return v.toString(16);
+    });
 }
