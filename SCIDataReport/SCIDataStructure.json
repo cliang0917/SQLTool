@@ -1,4 +1,4 @@
-﻿{
+{
     "datatables":[{
         "table":"Report_CommProduct",
         "table_name":"产品表",
@@ -64,6 +64,9 @@
             {"column":"ispub","column_name":"是否公海客户","column_type":"bool"},
             {"column":"isdel","column_name":"是否已删除","column_type":"bool"},
             {"column":"memo","column_name":"备注","column_type":"string"}
+        ],
+        "table_join":[
+            {"table":"Report_Admin","primary_key":"id","foreign_key":"adminid"}
         ]
     },{
         "table":"Report_CommPayItem",
@@ -113,6 +116,15 @@
             {"table":"Report_CommPay","primary_key":"payid","foreign_key":"payid"},
             {"table":"Report_CommProduct","primary_key":"pid","foreign_key":"pid"},
             {"table":"Report_FinaPay","primary_key":"fid","foreign_key":"fid"}
+        ]
+    },{
+        "table":"Report_Admin",
+        "table_name":"业务员表",
+        "table_columns":[
+            {"column":"id","column_name":"订单号","column_type":"int"},
+            {"column":"name","column_name":"编号","column_type":"string"},
+            {"column":"department","column_name":"产品编号","column_type":"string"},
+            {"column":"isusing","column_name":"业绩","column_type":"bool"}
         ]
     }]
 }
