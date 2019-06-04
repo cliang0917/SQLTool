@@ -1,7 +1,8 @@
 var _t; // 数据源
 var lu_element , lu_form , lu_table , lu_layer , lu_laydate; // LayUI 相关组件
-var PRIMARY_TABLE; // 主表
+var PRIMARY_TABLE = ''; // 主表
 var LESS_TABLES = []; // 从表
+var LESS_TABLES_JOIN_RELATION = []; // 从表的join关系
 var CONDITIONS = []; // 条件
 var TABLE_COLUMNS = []; // 预览表格的表头数组
 
@@ -24,7 +25,6 @@ $.getJSON('./SCIDataReport/SCIDataStructure.json', function (_source) {
 function BindDataTable(){
     $.each(_t.datatables , function(index , item){
         $('#primary_list').append('<input type="radio" name="rd-primary" lay-filter="rd-primary" value="' + item.table + '" title="' + item.table_name + '" />');
-        $('#less_list').append('<input type="checkbox" lay-skin="primary" lay-filter="ck-less" value="' + item.table + '" title="' + item.table_name + '" disabled="" />');
     });
     lu_form.render();
 }
@@ -41,8 +41,42 @@ function BindBaseEvent(){
         OpenLayer(1 , $('#updateLog') , '更新日志' , '80%' , '80%');
     });
 
+    // 添加从表
+    $('#btnAddLessList').click(function(){
+        if(PRIMARY_TABLE == ''){
+            lu_layer.msg('请选择一个主表!');
+            return;
+        }
+
+        $('#AddLessList').empty();
+        $.each(_t.datatables , function(index , item){
+            $('#AddLessList').append('<div class="layui-form-item"><button type="button" class="layui-btn layui-btn-normal" value="' + item.table + '" onclick="LessTableSelect(\'' + item.table + '\' , \'' + item.table_name + '\')">' + item.table_name + '</button></div>');
+        });
+        lu_form.render();
+
+        // 先全部禁用和取消选中
+        $('#AddLessList').find('button').each(function(index , item){
+            $(item).addClass('layui-btn-disabled');
+            item.disabled = true;
+        });
+
+        // 找主表可关联的表，并启用
+        LessTableLoading(PRIMARY_TABLE);
+        // 找从表可关联的表，并启用
+        $.each(LESS_TABLES , function(index , item){
+            LessTableLoading(item);
+        });
+
+        OpenLayer(1 , $('#AddLessList') , '添加从表' , '20%' , '50%');
+    });
+
     // 添加条件
     $('#btnAddLayer').click(function(){
+        if(PRIMARY_TABLE == ''){
+            lu_layer.msg('请选择一个主表!');
+            return;
+        }
+
         // 重置
         ResetConditionLayer();
         // 绑定列
@@ -69,45 +103,16 @@ function BindBaseEvent(){
     lu_form.on('radio(rd-primary)', function(data){
         //重置
         LESS_TABLES = [];
+        LESS_TABLES_JOIN_RELATION = [];
         CONDITIONS = [];
         TABLE_COLUMNS = [];
-
-        // 先全部禁用和取消选中
-        $('#less_list').find('input:checkbox').each(function(index , item){
-            item.checked = false;
-            item.disabled = true;
-        });
-        lu_form.render('checkbox');
-
-        // 找到可以关联的表，并启用
-        var _select_table = data.value;
-        var _table_join = Enumerable.From(_t.datatables)
-            .Where('$.table == "' + _select_table + '"')
-            .Select('$.table_join')
-            .ToArray();
-        
-        $.each(_table_join[0] , function(index , item){
-            $('#less_list').find('input:checkbox[value="' + item.table + '"]').attr("disabled",false);
-        });
-        lu_form.render('checkbox');
+        $('#less_list').find('.layui-dc-circle').remove();
+        $('#con_list').find('.layui-dc-circle').remove();
 
         // 生成SQL
         PRIMARY_TABLE = data.value;
         CreateSQL();
 
-        CollectColumns();
-    });
-    
-    // 从表选中事件
-    lu_form.on('checkbox(ck-less)', function(data){
-        TABLE_COLUMNS = [];
-
-        if(data.elem.checked)
-            LESS_TABLES.push(data.value);
-        else
-            LESS_TABLES.splice($.inArray(data.value , LESS_TABLES) , 1);
-
-        CreateSQL();
         CollectColumns();
     });
 
@@ -139,62 +144,62 @@ function BindBaseEvent(){
             $('#txtKeyWord_like').parent().parent().find('label').addClass('layui-label-color-red');
             $('#txtKeyWord_in').parent().parent().find('label').addClass('layui-label-color-red');
 
-            $('#txtKeyWord_like').attr("disabled",false);
-            $('#txtKeyWord_in').attr("disabled",false);
+            $('#txtKeyWord_like').attr('disabled',false);
+            $('#txtKeyWord_in').attr('disabled',false);
 
-            $('#inStart').attr("disabled",true);
-            $('#inEnd').attr("disabled",true);
-            $('#price_min').attr("disabled",true);
-            $('#price_max').attr("disabled",true);
-            $('input[name="bool_choose"]').attr("disabled",true);
+            $('#inStart').attr('disabled',true);
+            $('#inEnd').attr('disabled',true);
+            $('#price_min').attr('disabled',true);
+            $('#price_max').attr('disabled',true);
+            $('input[name="bool_choose"]').attr('disabled',true);
         }
         else if(column_type == 'int'){
             $('#txtKeyWord_in').parent().parent().find('label').addClass('layui-label-color-red');
             
-            $('#txtKeyWord_in').attr("disabled",false);
+            $('#txtKeyWord_in').attr('disabled',false);
             
-            $('#txtKeyWord_like').attr("disabled",true);
-            $('#inStart').attr("disabled",true);
-            $('#inEnd').attr("disabled",true);
-            $('#price_min').attr("disabled",true);
-            $('#price_max').attr("disabled",true);
-            $('input[name="bool_choose"]').attr("disabled",true);
+            $('#txtKeyWord_like').attr('disabled',true);
+            $('#inStart').attr('disabled',true);
+            $('#inEnd').attr('disabled',true);
+            $('#price_min').attr('disabled',true);
+            $('#price_max').attr('disabled',true);
+            $('input[name="bool_choose"]').attr('disabled',true);
         }
         else if(column_type == 'bool'){
             $('input[name="bool_choose"]').parent().parent().find('label').addClass('layui-label-color-red');
             
-            $('input[name="bool_choose"]').attr("disabled",false);
+            $('input[name="bool_choose"]').attr('disabled',false);
 
-            $('#txtKeyWord_in').attr("disabled",true);
-            $('#txtKeyWord_like').attr("disabled",true);
-            $('#price_min').attr("disabled",true);
-            $('#price_max').attr("disabled",true);
-            $('#inStart').attr("disabled",true);
-            $('#inEnd').attr("disabled",true);
+            $('#txtKeyWord_in').attr('disabled',true);
+            $('#txtKeyWord_like').attr('disabled',true);
+            $('#price_min').attr('disabled',true);
+            $('#price_max').attr('disabled',true);
+            $('#inStart').attr('disabled',true);
+            $('#inEnd').attr('disabled',true);
         }
         else if(column_type == 'date' || column_type == 'datetime'){
             $('#inStart').parent().parent().find('label').addClass('layui-label-color-red');
             
-            $('#inStart').attr("disabled",false);
-            $('#inEnd').attr("disabled",false);
+            $('#inStart').attr('disabled',false);
+            $('#inEnd').attr('disabled',false);
 
-            $('#txtKeyWord_in').attr("disabled",true);
-            $('#txtKeyWord_like').attr("disabled",true);
-            $('#price_min').attr("disabled",true);
-            $('#price_max').attr("disabled",true);
-            $('input[name="bool_choose"]').attr("disabled",true);
+            $('#txtKeyWord_in').attr('disabled',true);
+            $('#txtKeyWord_like').attr('disabled',true);
+            $('#price_min').attr('disabled',true);
+            $('#price_max').attr('disabled',true);
+            $('input[name="bool_choose"]').attr('disabled',true);
         }
         else if(column_type == 'double'){
             $('#price_min').parent().parent().find('label').addClass('layui-label-color-red');
 
-            $('#price_min').attr("disabled",false);
-            $('#price_max').attr("disabled",false);
+            $('#price_min').attr('disabled',false);
+            $('#price_max').attr('disabled',false);
 
-            $('#txtKeyWord_like').attr("disabled",true);
-            $('#txtKeyWord_in').attr("disabled",true);
-            $('#inStart').attr("disabled",true);
-            $('#inEnd').attr("disabled",true);
-            $('input[name="bool_choose"]').attr("disabled",true);
+            $('#txtKeyWord_like').attr('disabled',true);
+            $('#txtKeyWord_in').attr('disabled',true);
+            $('#inStart').attr('disabled',true);
+            $('#inEnd').attr('disabled',true);
+            $('input[name="bool_choose"]').attr('disabled',true);
         }
         else{
             lu_layer.msg('数据列类型错误');
@@ -279,6 +284,88 @@ function BindBaseEvent(){
     });
 }
 
+// 加载可选从表
+function LessTableLoading(exists_table){
+    var _select_table = exists_table;
+    var _table_join = Enumerable.From(_t.datatables)
+        .Where('$.table == "' + _select_table + '"')
+        .Select('$.table_join')
+        .ToArray();
+    
+    $.each(_table_join[0] , function(index , item){
+        if($.inArray(item.table , LESS_TABLES) == -1){
+            var _btn = $('#AddLessList').find('button[value="' + item.table + '"]');
+            _btn.removeClass('layui-btn-disabled');
+            _btn.attr('disabled',false);
+            _btn.attr('fromjoin' , exists_table);
+        }
+    });
+}
+
+// 从表选择
+function LessTableSelect(less_table, less_tablename){
+    var _obj_join = {};
+    _obj_join.tablename = less_table;
+    _obj_join.jointablename = $('#AddLessList').find('button[value="' + less_table + '"]').attr('fromjoin');
+
+    TABLE_COLUMNS = [];
+    LESS_TABLES.push(less_table);
+    LESS_TABLES_JOIN_RELATION.push(_obj_join);
+    CreateSQL();
+    CollectColumns();
+
+    $('#less_list').append('<span class="layui-dc-circle" lesstable="' + less_table + '">' + less_tablename + '<i onclick="LessTableDelete(\'' + less_table + '\');" title="删除" class="layui-icon">&#x1006;</i></span>');
+    lu_layer.closeAll();
+}
+
+// 从表删除
+function LessTableDelete(less_table){
+    lu_layer.confirm('确定要删除此表么？', {
+        btn: ['确定','取消']
+    }, function(){
+        TABLE_COLUMNS = [];
+        JoinRelationDelete(less_table);
+        // 删除表
+        LESS_TABLES.splice($.inArray(less_table , LESS_TABLES) , 1);
+        // 删除提示
+        $('.layui-dc-circle[lesstable="' + less_table + '"]').remove();
+        for(i = 0 ; i < LESS_TABLES_JOIN_RELATION.length ; i++)
+        {
+            if(LESS_TABLES_JOIN_RELATION[i].tablename == less_table){
+                // 删除关联关系
+                LESS_TABLES_JOIN_RELATION.splice(i, 1);
+            }
+        }
+
+        // 重新生成SQL语句
+        CreateSQL();
+        CollectColumns();
+        lu_layer.msg('删除成功', {icon: 1});
+
+    }, function(){
+        console.log('取消');
+    });
+}
+
+// 删除迭代的关联关系
+function JoinRelationDelete(less_table){
+    // 找跟删除表关联的表，先删掉
+    for(i = 0 ; i < LESS_TABLES_JOIN_RELATION.length ; i++)
+    {
+        if(LESS_TABLES_JOIN_RELATION[i].jointablename == less_table){
+            var _tablename = LESS_TABLES_JOIN_RELATION[i].tablename;
+            // 删除表
+            LESS_TABLES.splice($.inArray(_tablename , LESS_TABLES) , 1);
+            // 删除提示
+            $('.layui-dc-circle[lesstable="' + _tablename + '"]').remove();
+            // 删除关联关系
+            LESS_TABLES_JOIN_RELATION.splice(i, 1);
+            // 迭代删除
+            JoinRelationDelete(_tablename);
+        }
+    }
+}
+
 // 删除条件
 function DeleteContion(_guid){
     lu_layer.confirm('确定要删除此条件么？', {
@@ -294,7 +381,7 @@ function DeleteContion(_guid){
         // 删除提示
         $('.layui-dc-circle[guid="' + _guid + '"]').remove();
 
-        // 重新生成SQL预计
+        // 重新生成SQL语句
         CreateSQL();
         lu_layer.msg('删除成功', {icon: 1});
     }, function(){
@@ -336,11 +423,18 @@ function CreateSQL(){
 
     _FROM = 'from ' + PRIMARY_TABLE;
 
-    $.each(_table.table_join , function(index , item){
-        var f = $.inArray(item.table , LESS_TABLES);
-        if(f > -1)
-            _INNER += 'inner join ' + item.table + ' on ' + item.table + '.' + item.primary_key + ' = ' + PRIMARY_TABLE + '.' + item.foreign_key + '\r\n';
-    });
+    $.each(LESS_TABLES_JOIN_RELATION , function(index , item){
+        var _less_table = Enumerable.From(_t.datatables)
+            .Where('$.table == "' + item.jointablename + '"')
+            .Select('$')
+            .ToArray()[0];
+
+        $.each(_less_table.table_join , function(l_index , l_item){
+            if(l_item.table == item.tablename){
+                _INNER += 'inner join ' + l_item.table + ' on ' + l_item.table + '.' + l_item.primary_key + ' = ' + _less_table.table + '.' + l_item.foreign_key + '\r\n';
+            }
+        });
+    })
 
     $.each(CONDITIONS , function(index , item){
         var _temp_where = TranslateConditions(item , 'where');
@@ -419,13 +513,13 @@ function OpenLayer(_type , _content , _title , _width , _height){
 function ResetConditionLayer(){
     $('#AddCondition').find('.layui-label-color-red').removeClass('layui-label-color-red');
 
-    $('#txtKeyWord_like').attr("disabled",true);
-    $('#txtKeyWord_in').attr("disabled",true);
-    $('#inStart').attr("disabled",true);
-    $('#inEnd').attr("disabled",true);
-    $('#price_min').attr("disabled",true);
-    $('#price_max').attr("disabled",true);
-    $('input[name="bool_choose"]').attr("disabled",true);
+    $('#txtKeyWord_like').attr('disabled',true);
+    $('#txtKeyWord_in').attr('disabled',true);
+    $('#inStart').attr('disabled',true);
+    $('#inEnd').attr('disabled',true);
+    $('#price_min').attr('disabled',true);
+    $('#price_max').attr('disabled',true);
+    $('input[name="bool_choose"]').attr('disabled',true);
 
     $('#txtKeyWord_like').val('');
     $('#txtKeyWord_in').val('');
