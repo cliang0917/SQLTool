@@ -32,9 +32,13 @@
                         <label class="layui-form-label"><b>主表</b></label>
                         <div class="layui-input-block" id="primary_list"></div>
                     </div>
-                    <div class="layui-form-item">
+                    <div class="layui-form-item" id="less_list">
                         <label class="layui-form-label"><b>从表</b></label>
-                        <div class="layui-input-block" id="less_list"></div>
+                        <div class="layui-inline">
+                            <button type="button" class="layui-btn layui-btn-sm layui-btn-primary" id="btnAddLessList">
+                                <i class="layui-icon">&#xe654;</i>
+                            </button>
+                        </div>
                     </div>
                     <div class="layui-form-item" id="con_list">
                         <label class="layui-form-label"><b>条件</b></label>
@@ -65,6 +69,11 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 添加从表弹窗 START -->
+            <div class="layui-form" id="AddLessList" style="padding: 10px;display: none;">
+            </div>
+            <!-- 添加从表弹窗 END -->
 
             <!-- 添加条件弹窗 START -->
             <div class="layui-form" id="AddCondition" style="padding: 10px;display: none;">
