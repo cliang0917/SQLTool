@@ -47,3 +47,46 @@
 [lay-href]{
     cursor:pointer;
 }
+
+.noselect {
+    -webkit-touch-callout: none; /* iOS Safari */    
+    -webkit-user-select: none; /* Chrome/Safari/Opera */    
+    -khtml-user-select: none; /* Konqueror */    
+    -moz-user-select: none; /* Firefox */    
+    -ms-user-select: none; /* Internet Explorer/Edge */    
+    user-select: none; /* Non-prefixed version, currently */
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
+    -webkit-border-radius: 8px;
+    border-radius: 8px;
+}
+::-webkit-scrollbar-thumb {
+    -webkit-border-radius: 8px;
+    border-radius: 8px;
+    background: rgba(30,159,255,0.8); 
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+}
+
+/* 圆形图标按钮 */
+.layui-btn-circle{
+    display: inline-block; 
+    vertical-align: middle; 
+    height: 16px; 
+    width: 16px; 
+    line-height: 16px; 
+    color: #fff; 
+    white-space: nowrap; 
+    text-align: center; 
+    font-size: 12px; 
+    border: none; 
+    cursor: pointer; 
+    -moz-user-select: none; 
+    -webkit-user-select: none; 
+    -ms-user-select: none;
+}
