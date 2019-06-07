@@ -4,7 +4,9 @@ var PRIMARY_TABLE = ''; // 主表
 var LESS_TABLES = []; // 从表
 var LESS_TABLES_JOIN_RELATION = []; // 从表的join关系
 var CONDITIONS = []; // 条件
-var TABLE_COLUMNS = []; // 预览表格的表头数组
+var TABLE_COLUMNS = []; // 所有表的所有列
+var DATA_COLUMNS = []; // 预览表格的表头数组
+var SELECT_COLUMNS = []; // 选择的需要展示的表头
 
 $.getJSON('./SCIDataReport/SCIDataStructure.json', function (_source) {
     _t = _source;
@@ -41,10 +43,15 @@ function BindBaseEvent(){
         OpenLayer(1 , $('#updateLog') , '更新日志' , '80%' , '80%');
     });
 
+    // 已选择列添加拖动结束事件
+    $('#choose_columns_to').bind('drag.end.arrangeable',function(){
+        SortSelectColumns();
+    });
+
     // 添加从表
     $('#btnAddLessList').click(function(){
         if(PRIMARY_TABLE == ''){
-            lu_layer.msg('请选择一个主表!');
+            lu_layer.msg('至少选择一个表!');
             return;
         }
 
@@ -73,7 +80,7 @@ function BindBaseEvent(){
     // 添加条件
     $('#btnAddLayer').click(function(){
         if(PRIMARY_TABLE == ''){
-            lu_layer.msg('请选择一个主表!');
+            lu_layer.msg('至少选择一个表!');
             return;
         }
 
@@ -99,6 +106,30 @@ function BindBaseEvent(){
         OpenLayer(1 , $('#AddCondition') , '添加条件' , '60%' , '80%');
     });
 
+    // 设置要查询的列
+    $('#btnChooseColumn').click(function(){
+        if(PRIMARY_TABLE == ''){
+            lu_layer.msg('至少选择一个表!');
+            return;
+        }
+
+        // 加载表
+        $('#choose_columns_list').empty();
+        $('#choose_columns_from').empty();
+
+        $('#choose_columns_list').append('<option value="">直接选择或搜索选择</option>');
+        var _pri_table = SearchTable(PRIMARY_TABLE);
+        $('#choose_columns_list').append('<option value="' + _pri_table.table + '">' + _pri_table.table_name + '</option>');
+
+        $.each(LESS_TABLES , function(index , item){
+            var _le_table = SearchTable(item);
+            $('#choose_columns_list').append('<option value="' + _le_table.table + '">' + _le_table.table_name + '</option>');
+        });
+        lu_form.render('select');
+
+        OpenLayer(1 , $('#ChooseColumn') , '设置查询列' , '30%' , '60%');
+    });
+
     // 主表选择事件
     lu_form.on('radio(rd-primary)', function(data){
         //重置
@@ -106,6 +137,9 @@ function BindBaseEvent(){
         LESS_TABLES_JOIN_RELATION = [];
         CONDITIONS = [];
         TABLE_COLUMNS = [];
+        SELECT_COLUMNS = [];
+        DATA_COLUMNS = [];
+        $('#choose_columns_to').empty();
         $('#less_list').find('.layui-dc-circle').remove();
         $('#con_list').find('.layui-dc-circle').remove();
 
@@ -128,10 +162,45 @@ function BindBaseEvent(){
                         elem: '#data_demo',
                         data: eval(_data),
                         cellMinWidth: 150,
-                        cols: [TABLE_COLUMNS]
+                        cols: [DATA_COLUMNS]
                     });
                 }
             });
+        }
+    });
+
+    // 设置查询列，表选择事件
+    lu_form.on('select(choose_columns_list)', function(data){
+        $('#choose_columns_from').empty();
+        if(data.value != ''){
+            var _obj_table = SearchTable(data.value);
+            $.each(_obj_table.table_columns, function(index , item){
+                var _guid = Guid();
+                var _table = data.value;
+                var _table_name = _obj_table.table_name;
+                var _column = item.column;
+                var _colunm_name = item.column_name;
+                var _column_type = item.column_type;
+
+                var _obj = {};
+                _obj.guid = _guid;
+                _obj.table = _table;
+                _obj.tablename = _table_name;
+                _obj.column = _column;
+                _obj.column_name = _colunm_name;
+                _obj.column_type = _column_type;
+
+                var _temp_btn_html = '';
+                _temp_btn_html += '<div class="layui-form-item" guid="' + _guid + '" table="' + _table + '" column="' + _column + '">';
+                _temp_btn_html += '    <button type="button" class="layui-btn-circle layui-btn-normal layui-btn-radius" onclick=ChooseSelectColumns(\'' + JSON.stringify(_obj) + '\')>';
+                _temp_btn_html += '        <i style="font-size:12px;" class="layui-icon">&#xe654;</i>';
+                _temp_btn_html += '    </button>';
+                _temp_btn_html += '    <span style="margin-left:10px;" class="layui-badge">' + item.column_name + '</span>';
+                _temp_btn_html += '</div>';
+
+                $('#choose_columns_from').append(_temp_btn_html);
+            });
+            DisabledSelectColumns();
         }
     });
 
@@ -286,6 +355,15 @@ function BindBaseEvent(){
     });
 }
 
+// 查询表
+function SearchTable(_tablename){
+    var _table = Enumerable.From(_t.datatables)
+        .Where('$.table == "' + _tablename + '"')
+        .Select('$')
+        .ToArray()[0];
+    return _table
+}
+
 // 加载可选从表
 function LessTableLoading(exists_table){
     var _select_table = exists_table;
@@ -311,6 +389,7 @@ function LessTableSelect(less_table, less_tablename){
     _obj_join.jointablename = $('#AddLessList').find('button[value="' + less_table + '"]').attr('fromjoin');
 
     TABLE_COLUMNS = [];
+    DATA_COLUMNS = [];
     LESS_TABLES.push(less_table);
     LESS_TABLES_JOIN_RELATION.push(_obj_join);
     CreateSQL();
@@ -326,6 +405,7 @@ function LessTableDelete(less_table){
         btn: ['确定','取消']
     }, function(){
         TABLE_COLUMNS = [];
+        DATA_COLUMNS = [];
         JoinRelationDelete(less_table);
         // 删除表
         LESS_TABLES.splice($.inArray(less_table , LESS_TABLES) , 1);
@@ -338,6 +418,8 @@ function LessTableDelete(less_table){
                 LESS_TABLES_JOIN_RELATION.splice(i, 1);
             }
         }
+        // 删除自定义选择的列
+        DeleteLessTableSelectColumns(less_table);
         // 删除相应的条件
         DeleteContionByTable(less_table);
 
@@ -364,6 +446,8 @@ function JoinRelationDelete(less_table){
             $('.layui-dc-circle[lesstable="' + _tablename + '"]').remove();
             // 删除关联关系
             LESS_TABLES_JOIN_RELATION.splice(i, 1);
+            // 删除自定义选择的列
+            DeleteLessTableSelectColumns(_tablename);
             // 迭代删除
             JoinRelationDelete(_tablename);
             // 删除相应的条件
@@ -407,6 +491,110 @@ function DeleteContionByTable(_tablename){
     $('.layui-dc-circle[fromtable="' + _tablename + '"]').remove();
 }
 
+// 添加需要查询的列
+function ChooseSelectColumns(_obj_str){
+    var _obj = JSON.parse(_obj_str);
+
+    // 加到右边
+    var _guid = Guid();
+    var _temp_btn_html = '';
+    _temp_btn_html += '<div class="layui-form-item" guid="' + _guid + '" table="' + _obj.table + '" column="' + _obj.column + '">';
+    _temp_btn_html += '    <button type="button" class="layui-btn-circle layui-btn-normal layui-btn-radius" onclick="DeleteSelectColumns(\'' + _guid + '\' , \'' + _obj.table + '\' , \'' + _obj.column + '\');">';
+    _temp_btn_html += '        <i style="font-size:12px;" class="layui-icon">―</i>';
+    _temp_btn_html += '    </button>';
+    _temp_btn_html += '    <span style="margin-left:10px; cursor: move;" class="layui-badge noselect">' + _obj.tablename + '的' + _obj.column_name + '</span>';
+    _temp_btn_html += '</div>';
+
+    $('#choose_columns_to').append(_temp_btn_html);
+    $('#choose_columns_to').find('div').arrangeable({
+        dragSelector: '.layui-badge'
+    });
+
+    // 添加到数组
+    SELECT_COLUMNS.push(_obj);
+
+    // 设置左边为不可用
+    DisabledSelectColumns();
+
+    // 重新生成SQL语句
+    CreateSQL();
+    CollectSelectColumns();
+}
+
+// 重新排序选择的列
+function SortSelectColumns(){
+    var _temp_select = [];
+    $.each($('#choose_columns_to').find('div'), function(index , item){
+        var _table = $(this).attr('table');
+        var _column = $(this).attr('column');
+        var _select_obj = Enumerable.From(SELECT_COLUMNS)
+            .Where('$.column == "' + _column + '" && $.table == "' + _table + '"')
+            .Select('$')
+            .ToArray()[0];
+        _temp_select.push(_select_obj);
+    });
+    SELECT_COLUMNS = _temp_select;
+
+    // 重新生成SQL语句
+    CreateSQL();
+    CollectSelectColumns();
+}
+
+// 删除需要查询的列
+function DeleteSelectColumns(guid , table , column){
+    // 从数组中删除
+    for(i=0; i < SELECT_COLUMNS.length; i++){
+        if(SELECT_COLUMNS[i].table == table && SELECT_COLUMNS[i].column == column){
+            SELECT_COLUMNS.splice(i, 1);
+        }
+    }
+
+    // 删除右侧元素
+    $('#choose_columns_to').find('div[guid="' + guid + '"]').remove();
+
+    // 重置左边为不可用
+    DisabledSelectColumns();
+
+    // 重新生成SQL语句
+    CreateSQL();
+    CollectSelectColumns();
+}
+
+// 删除从表时，把从表的已选择列也同时删除
+function DeleteLessTableSelectColumns(table){
+    // 从数组中删除
+    for(let i=SELECT_COLUMNS.length - 1; i >=0 ; i--){
+        if(SELECT_COLUMNS[i].table == table){
+            SELECT_COLUMNS.splice(i, 1);
+        }
+    }
+
+    // 删除右侧元素
+    $('#choose_columns_to').find('div[table="' + table + '"]').remove();
+    // 重置左边为不可用
+    DisabledSelectColumns();
+
+    // 重新生成SQL语句
+    CreateSQL();
+    CollectSelectColumns();
+}
+
+// 禁用已选中的查询列
+function DisabledSelectColumns(){
+    $.each($('#choose_columns_from').find('div') , function(index , item){
+        $(this).find('button').removeClass('layui-btn-disabled');
+        $(this).find('button').attr('disabled', false);
+        $(this).find('.layui-badge').removeClass('layui-bg-gray');
+    });
+
+    $.each(SELECT_COLUMNS , function(index , item){
+        var _div = $('#choose_columns_from').find('div[table="' + item.table + '"][column="' + item.column + '"]');
+        _div.find('button').addClass('layui-btn-disabled');
+        _div.find('button').attr('disabled', true);
+        _div.find('.layui-badge').addClass('layui-bg-gray');
+    });
+}
+
 // 生成SQL
 function CreateSQL(){
     var _SELECT = 'select top 10';
@@ -420,22 +608,30 @@ function CreateSQL(){
         .Select('$')
         .ToArray()[0];
 
+    // 拼接列，如果有选择的列，优先显示选择的列，否则显示全部列
     var _FIELD_ARR = [];
-    // 找主表的列
-    $.each(_table.table_columns , function(index , item){
-        _FIELD_ARR.push('    ' + PRIMARY_TABLE + '.' + item.column);
-    });
-    // 找从表的列
-    $.each(LESS_TABLES , function(index , item){
-        var _less_table = Enumerable.From(_t.datatables)
-            .Where('$.table == "' + item + '"')    
-            .Select('$')
-            .ToArray()[0];
-
-        $.each(_less_table.table_columns , function(cIndex , cItem){
-            _FIELD_ARR.push('    ' + item + '.' + cItem.column);
+    if(SELECT_COLUMNS.length > 0){
+        $.each(SELECT_COLUMNS , function(index , item){
+            _FIELD_ARR.push('    ' + item.table + '.' + item.column);
         });
-    });
+    }
+    else{
+        // 找主表的列
+        $.each(_table.table_columns , function(index , item){
+            _FIELD_ARR.push('    ' + PRIMARY_TABLE + '.' + item.column);
+        });
+        // 找从表的列
+        $.each(LESS_TABLES , function(index , item){
+            var _less_table = Enumerable.From(_t.datatables)
+                .Where('$.table == "' + item + '"')    
+                .Select('$')
+                .ToArray()[0];
+
+            $.each(_less_table.table_columns , function(cIndex , cItem){
+                _FIELD_ARR.push('    ' + item + '.' + cItem.column);
+            });
+        });
+    }
 
     _FIELD = _FIELD_ARR.join(',\r\n');
 
@@ -475,6 +671,9 @@ function CollectColumns(){
         .ToArray()[0];
     $.each(_table.table_columns , function(index , item){
         CreateTableColumn(item , PRIMARY_TABLE , _table.table_name);
+        // 如果有自选列，则不处理全部列
+        if(SELECT_COLUMNS.length == 0)
+            CreateDataColumn(item , PRIMARY_TABLE , _table.table_name);
     });
 
     // 组装从表
@@ -486,14 +685,37 @@ function CollectColumns(){
 
         $.each(_less_table.table_columns , function(cIndex , cItem){
             CreateTableColumn(cItem , item , _less_table.table_name);
+            // 如果有自选列，则不处理全部列
+            if(SELECT_COLUMNS.length == 0)
+                CreateDataColumn(cItem , item , _less_table.table_name);
         });
     });
 }
 
-// 创建预览表格的列
+// 收集选择列的信息
+function CollectSelectColumns(){
+    DATA_COLUMNS = [];
+
+    $.each(SELECT_COLUMNS , function(index , item){
+        CreateDataColumn(item , item.table , item.tablename);
+    });
+}
+
+// 创建所有表格的列
 function CreateTableColumn(item , table , tablename){
+    TABLE_COLUMNS.push({ 
+        tablename: tablename ,
+        table: table ,
+        field: item.column , 
+        title: item.column_name , 
+        type: item.column_type 
+    });
+}
+
+// 创建预览表格的列
+function CreateDataColumn(item , table , tablename){
     if(item.column_type == 'date')
-        TABLE_COLUMNS.push({ 
+        DATA_COLUMNS.push({ 
             tablename: tablename ,
             table: table ,
             field: item.column , 
@@ -502,7 +724,7 @@ function CreateTableColumn(item , table , tablename){
             templet: '<span>{{ moment(new Date(d.' + item.column + ')).format("YYYY-MM-DD")}}</span>'
         });
     else if(item.column_type == 'datetime')
-        TABLE_COLUMNS.push({ 
+        DATA_COLUMNS.push({ 
             tablename: tablename ,
             table: table ,
             field: item.column , 
@@ -511,7 +733,7 @@ function CreateTableColumn(item , table , tablename){
             templet: '<span>{{ moment(new Date(d.' + item.column + ')).format("YYYY-MM-DD hh:mm:ss")}}</span>'
         });
     else 
-        TABLE_COLUMNS.push({ 
+        DATA_COLUMNS.push({ 
             tablename: tablename ,
             table: table ,
             field: item.column , 
