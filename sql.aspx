@@ -5,11 +5,15 @@
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
         <title>SQL语句生成工具</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-        <link href="./layui/css/layui.css" rel="stylesheet" />
-        <link href="./layui/css/admin.css" rel="stylesheet" />
+        <link href="/layui/css/layui.css" rel="stylesheet" />
+        <link href="/layui/css/admin.css" rel="stylesheet" />
         <style type="text/css">
             html {
                 background-color: #f2f2f2;
+            }
+            .cscroll{
+                overflow-y: auto; 
+                overflow-x: hidden;
             }
         </style>
     </head>
@@ -26,14 +30,17 @@
                             <button type="button" class="layui-btn layui-btn-normal" id="btnLog">
                                 更新日志 <i class="layui-icon">&#xe60c;</i>
                             </button>
+                            <span style="color: red; font-size: 16px; font-weight: bold;margin-left: 10px;">
+                                简要使用说明：&nbsp;&nbsp;&nbsp;&nbsp;选主表 -> 选从表 -> 设置筛选条件  -> 选择要查询的列（可拖动排序） -> 预览
+                            </span>
                         </div>
                     </div>
                     <div class="layui-form-item">
-                        <label class="layui-form-label"><b>主表</b></label>
+                        <label class="layui-form-label"><b>1、主表</b></label>
                         <div class="layui-input-block" id="primary_list"></div>
                     </div>
                     <div class="layui-form-item" id="less_list">
-                        <label class="layui-form-label"><b>从表</b></label>
+                        <label class="layui-form-label"><b>2、从表</b></label>
                         <div class="layui-inline">
                             <button type="button" class="layui-btn layui-btn-sm layui-btn-primary" id="btnAddLessList">
                                 <i class="layui-icon">&#xe654;</i>
@@ -41,10 +48,18 @@
                         </div>
                     </div>
                     <div class="layui-form-item" id="con_list">
-                        <label class="layui-form-label"><b>条件</b></label>
+                        <label class="layui-form-label"><b>3、条件</b></label>
                         <div class="layui-inline">
                             <button type="button" class="layui-btn layui-btn-sm layui-btn-primary" id="btnAddLayer">
                                 <i class="layui-icon">&#xe654;</i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="layui-form-item" id="con_list">
+                        <label class="layui-form-label"><b>4、列</b></label>
+                        <div class="layui-inline">
+                            <button type="button" class="layui-btn layui-btn-sm layui-btn-primary" id="btnChooseColumn">
+                                <i class="layui-icon">&#xe716;</i>
                             </button>
                         </div>
                     </div>
@@ -54,7 +69,7 @@
                             <div class="layui-tab layui-tab-card" lay-filter="show_demo">
                                 <ul class="layui-tab-title">
                                     <li class="layui-this">SQL</li>
-                                    <li>预览</li>
+                                    <li>5、预览</li>
                                 </ul>
                                 <div class="layui-tab-content" style="height: 490px;">
                                     <div class="layui-tab-item layui-show">
@@ -134,6 +149,26 @@
             </div>
             <!-- 添加条件弹窗 END -->
 
+            <!-- 选择列 START -->
+            <div class="layui-layout-body layui-form" id="ChooseColumn" style="padding: 10px;display: none;">
+                <div class="layui-body" style="left: 0; display: grid; grid-template-rows: 60px;">
+                    <div style="margin: 5px; border-bottom: 2px solid #eee; line-height: 40px;">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label" style="text-align: left;"><b>选择表</b></label>
+                            <div class="layui-input-inline">
+                                <select id="choose_columns_list" lay-filter="choose_columns_list" lay-verify="" lay-search="" style="width: 120px;"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cscroll" style="display: grid; grid-template-columns: 50% 2px 50%; margin: 5px;">
+                        <div class="cscroll" style="margin-right: 5px;" id="choose_columns_from"></div>
+                        <div style="display: block; width: 2px; background-color: #eee;"></div>
+                        <div class="cscroll" style="margin-left: 5px;" id="choose_columns_to"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- 选择列 END -->
+
             <!-- 使用帮助 START -->
             <div id="useHelp" style="padding: 10px;display: none;line-height: 30px;">
                 <h3>一、主表</h3>
@@ -184,10 +219,11 @@
             <!-- 更新日志 END -->
 
         </form>
-        <script src="./js/jquery-3.3.1.min.js"></script>
-        <script src="./js/linq.js"></script>
-        <script src="./js/moment.min.js"></script>
-        <script src="./layui/layui.js"></script>
-        <script src="./SCIDataReport/SCIDataReport.js"></script>
+        <script src="/js/jquery-3.3.1.min.js"></script>
+        <script src="/js/linq.js"></script>
+        <script src="/js/moment.min.js"></script>
+        <script src="/layui/layui.js"></script>
+        <script src="/js/drag-arrange.js"></script>
+        <script src="/SCIDataReport/SCIDataReport.js"></script>
     </body>
 </html>
