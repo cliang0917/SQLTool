@@ -121,10 +121,10 @@
         "table":"Report_Admin",
         "table_name":"业务员表",
         "table_columns":[
-            {"column":"id","column_name":"订单号","column_type":"int"},
-            {"column":"name","column_name":"编号","column_type":"string"},
-            {"column":"department","column_name":"产品编号","column_type":"string"},
-            {"column":"isusing","column_name":"业绩","column_type":"bool"}
+            {"column":"id","column_name":"业务员编号","column_type":"int"},
+            {"column":"name","column_name":"业务员名称","column_type":"string"},
+            {"column":"department","column_name":"业务员部门","column_type":"string"},
+            {"column":"isusing","column_name":"是否启用","column_type":"bool"}
         ]
     }]
 }
