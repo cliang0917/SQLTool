@@ -34,7 +34,7 @@
             {"column":"enddate","column_name":"截止时间","column_type":"date"},
             {"column":"isauditing","column_name":"是否财务已审","column_type":"bool"},
             {"column":"ispower","column_name":"是否已开权限","column_type":"bool"},
-            {"column":"ifinvoice","column_name":"是否要发票","column_type":"string"},
+            {"column":"ifinvoice","column_name":"是否要发票","column_type":"bool"},
             {"column":"adminname","column_name":"订单录入人","column_type":"string"},
             {"column":"admindeptname","column_name":"订单录入部门","column_type":"string"},
             {"column":"mobilephone","column_name":"手机号","column_type":"string"}
