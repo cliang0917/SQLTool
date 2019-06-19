@@ -25,9 +25,21 @@
                         <button type="button" class="layui-btn layui-btn-normal" id="btnHelp">
                             使用前先点我看使用帮助 <i class="layui-icon">&#xe60b;</i>
                         </button>
+                        <button type="button" class="layui-btn layui-btn-normal" id="btnSave">
+                            保存 <i class="layui-icon">&#xe655;</i>
+                        </button>
+                        <button type="button" class="layui-btn layui-btn-normal" id="btnImport">
+                            导出 <i class="layui-icon">&#xe63c;</i>
+                        </button>
                         <span style="color: red; font-size: 16px; font-weight: bold;margin-left: 10px;">
                             简要使用说明：&nbsp;&nbsp;&nbsp;&nbsp;选主表 -> 选从表 -> 设置筛选条件  -> 选择要查询的列（可拖动排序） -> 预览
                         </span>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label"><b>已保存查询</b></label>
+                    <div class="layui-input-block">
+                        <select id="save_tables" lay-filter="save_tables" lay-verify="" lay-search=""></select>
                     </div>
                 </div>
                 <div class="layui-form-item">
@@ -163,6 +175,26 @@
             </div>
         </div>
         <!-- 选择列 END -->
+
+        <!-- 保存SQL START -->
+        <div class="layui-form" id="SaveSql" style="padding: 10px;display: none;">
+            <div class="layui-form-item">
+                <label class="layui-form-label"><b class="layui-label-color-red">标题 *</b></label>
+                <div class="layui-input-block">
+                    <input type="text" name="txtTitle" id="txtTitle" required  lay-verify="required" placeholder="请输入标题" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label"><b>备注</b></label>
+                <div class="layui-input-block">
+                    <textarea id="txtRemark" name="txtRemark" class="layui-textarea" placeholder="此查询的简要备注" style="height:80px;"></textarea>
+                </div>
+            </div>
+            <div class="layui-form-item" style="text-align: center;">
+                <button type="button" class="layui-btn layui-btn-normal" id="btnSaveSQL">保存查询</button>
+            </div>
+        </div>
+        <!-- 保存SQL END -->
 
         <!-- 使用帮助 START -->
         <div id="useHelp" style="padding: 10px;display: none;line-height: 30px;">
